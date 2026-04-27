@@ -1,0 +1,10 @@
+@echo off
+REM ─────────────────────────────────────────────────────────────────────
+REM TEMPLATE: copie este arquivo como "setenv.bat" (sem o .example) e
+REM preencha sua chave da API Anthropic abaixo. O arquivo "setenv.bat"
+REM esta no .gitignore — sua chave NAO sera versionada.
+REM
+REM Obtenha uma chave em: https://console.anthropic.com/settings/keys
+REM ─────────────────────────────────────────────────────────────────────
+
+set ANTHROPIC_API_KEY=sk-ant-COLE-SUA-CHAVE-AQUI
