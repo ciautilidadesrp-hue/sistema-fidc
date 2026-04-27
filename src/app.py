@@ -1255,19 +1255,36 @@ with tab_resultado:
         # Mapeia os índices originais de df_ret para posições em x_indices
         ret_indices = [list(df_du.index).index(idx) for idx in df_ret.index]
         fig_ret = go.Figure()
+        _ret_vals = (df_ret["retorno_subordinada_mensal"] * 100).tolist()
+        _ret_min = min(_ret_vals) if _ret_vals else 0.0
+        _ret_max = max(_ret_vals) if _ret_vals else 0.0
+        _ret_span = max(_ret_max - _ret_min, 1.0)
+        _y_low = min(0.0, _ret_min) - _ret_span * 0.18
+        _y_high = max(0.0, _ret_max) + _ret_span * 0.45
+        _ret_text = [f"{v:.2f}%" for v in _ret_vals]
         fig_ret.add_trace(go.Bar(
             x=ret_indices,
-            y=df_ret["retorno_subordinada_mensal"] * 100,
+            y=_ret_vals,
             name="Retorno mensal (%)",
             marker_color=np.where(df_ret["retorno_subordinada_mensal"] >= 0, "#00183C", "#81BDDB"),
             customdata=df_ret["data_label"],
             hovertemplate="<b>%{customdata}</b><br>Retorno: %{y:.2f}%<extra></extra>",
+            text=_ret_text,
+            textposition="outside",
+            textangle=-90,
+            textfont=dict(size=11, color="#00183C"),
+            cliponaxis=False,
+            constraintext="none",
+            insidetextanchor="start",
         ))
         fig_ret.update_layout(
-            yaxis_title="%", xaxis_title="Data", height=350,
+            yaxis_title="%", xaxis_title="Data", height=480,
             xaxis=dict(tickmode="linear", tick0=0, dtick=max(1, len(df_du) // 20)),
+            yaxis=dict(range=[_y_low, _y_high]),
+            margin=dict(t=80, b=90, l=60, r=30),
             paper_bgcolor="#FFFFFF", plot_bgcolor="#F4F8FC",
             font=dict(family="Futura Bk BT, Futura, Segoe UI, sans-serif", color="#00183C"),
+            uniformtext=dict(mode="hide", minsize=9),
         )
         st.plotly_chart(fig_ret, use_container_width=True)
 
@@ -1492,7 +1509,7 @@ with tab_resultado:
             vals = df_ret["retorno_subordinada_mensal"].values * 100
             colors = ["#00183C" if v >= 0 else "#81BDDB" for v in vals]
 
-            fig, ax = plt.subplots(figsize=(9, 2.8), facecolor="#FFFFFF")
+            fig, ax = plt.subplots(figsize=(9, 3.6), facecolor="#FFFFFF")
             ax.set_facecolor("#F4F8FC")
             bars = ax.bar(x, vals, color=colors, width=0.8)
             ax.axhline(0, color="#2379AF", linewidth=0.8)
@@ -1505,18 +1522,22 @@ with tab_resultado:
             ax.set_xticklabels(tick_labels, rotation=30, ha="right", fontsize=7)
             ax.tick_params(axis="y", labelsize=7)
             ax.set_xlim(-1, n)
-            # Rótulos de dados na parte exterior das colunas (vertical, evita sobreposição)
-            for bar, v in zip(bars, vals):
-                label = f"{v:.2f}%"
-                if v >= 0:
-                    ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.05,
-                            label, ha="center", va="bottom", fontsize=5.5, color="#00183C",
-                            rotation=90, rotation_mode="anchor")
-                else:
-                    ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() - 0.05,
-                            label, ha="center", va="top", fontsize=5.5, color="#2379AF",
-                            rotation=90, rotation_mode="anchor")
-            fig.tight_layout(pad=0.5)
+
+            # Rótulos de dados externos (vertical, fora das barras)
+            v_min = float(min(vals)) if len(vals) else 0.0
+            v_max = float(max(vals)) if len(vals) else 0.0
+            v_span = max(v_max - v_min, 1.0)
+            ax.set_ylim(min(0.0, v_min) - v_span * 0.18, max(0.0, v_max) + v_span * 0.45)
+            label_strs = [f"{v:.2f}%" for v in vals]
+            ax.bar_label(
+                bars,
+                labels=label_strs,
+                padding=4,
+                fontsize=7,
+                rotation=90,
+                color="#00183C",
+            )
+            fig.tight_layout(pad=0.6)
 
             buf = _io.BytesIO()
             fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
@@ -2005,7 +2026,7 @@ with tab_resultado:
             # ── SEÇÃO 7: Gráfico Retorno (título + gráfico juntos) ──
             if _inc("grafico_retorno"):
                 _flow_gret = _sec_flow["grafico_retorno"]
-                img_ret = RLImage(_io.BytesIO(fig_ret_bytes), width=CONTENT_W, height=CONTENT_W * 200 / 700)
+                img_ret = RLImage(_io.BytesIO(fig_ret_bytes), width=CONTENT_W, height=CONTENT_W * 280 / 700)
                 _flow_gret.append(KeepTogether([
                     Paragraph("Retorno Mensal da Cota Subordinada", ps_titulo),
                     Spacer(1, 1 * mm),
